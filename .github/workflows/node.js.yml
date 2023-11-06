@@ -1,0 +1,33 @@
+name: Node.js CI
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.10.0
+        with:
+          mongodb-version: 6.0
+      - name: Sleep for 5s
+        uses: juliangruber/sleep-action@v2.0.0
+        with:
+          time: 10
+      - run: npm install
+      - run: npm run start-ci &
+      - run: npm run test-ci
