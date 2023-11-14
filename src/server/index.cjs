@@ -11,6 +11,8 @@ const logger = require("morgan");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const envConfig = require("simple-env-config");
+const RedisStore = require("connect-redis").default;
+const redis = require("redis");
 
 const env = process.env.NODE_ENV ? process.env.NODE_ENV : "dev";
 
@@ -26,16 +28,38 @@ const setupServer = async () => {
   app.set("views", __dirname);
   app.use(express.static(path.join(__dirname, "../../public")));
   // Setup pipeline session support
-  app.store = session({
-    name: "session",
-    secret: "grahamcardrules",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      path: "/",
-    },
+  const sessionClient = redis.createClient({
+    host: "localhost",
+    port: 6379,
+    legacyMode: false,
   });
-  app.use(app.store);
+
+  sessionClient.connect().catch(console.error);
+
+  app.use(
+    session({
+      name: "session",
+      store: new RedisStore({ client: sessionClient }),
+      secret: "sessionClientSecret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        path: "/",
+      },
+    })
+  );
+
+  // app.store = session({
+  //   name: "session",
+  //   secret: "grahamcardrules",
+  //   resave: false,
+  //   saveUninitialized: false,
+  //   cookie: {
+  //     path: "/",
+  //   },
+  // });
+  // app.use(app.store);
+
   // Finish with the body parser
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());

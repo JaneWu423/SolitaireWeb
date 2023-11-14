@@ -11,13 +11,20 @@ const CardImg = styled.img`
   width: 100%;
 `;
 
-export const Card = ({ card, top, left, onClick }) => {
+export const Card = ({ card, top, left, onClick, pile }) => {
   const source = card.up
     ? `/images/${card.value}_of_${card.suit}.png`
     : "/images/face_down.jpg";
-  const style = { left: `${left}%`, top: `${top}%` };
+  const style = card.select
+    ? {
+        left: `${left}%`,
+        top: `${top}%`,
+        border: "solid 2px yellow",
+        borderRadius: "5px"
+      }
+    : { left: `${left}%`, top: `${top}%` };
   const id = `${card.suit}:${card.value}`;
-  return <CardImg id={id} onClick={onClick} style={style} src={source} />;
+  return <CardImg id={id} onClick={(ev) => onClick(ev, card, pile)} style={style} src={source} />;
 };
 
 const PileBase = styled.div`
@@ -33,7 +40,7 @@ const PileFrame = styled.div`
   margin-top: 140%;
 `;
 
-export const Pile = ({ cards, spacing, horizontal, up, onClick }) => {
+export const Pile = ({ cards, spacing, horizontal, onClick, pile, onClickPile }) => {
   const children = cards.map((card, i) => {
     const top = horizontal ? 0 : i * spacing;
     const left = horizontal ? i * spacing : 0;
@@ -41,15 +48,17 @@ export const Pile = ({ cards, spacing, horizontal, up, onClick }) => {
       <Card
         key={i}
         card={card}
-        up={up}
         top={top}
         left={left}
+        pile={pile}
         onClick={onClick}
       />
     );
   });
   return (
-    <PileBase>
+    <PileBase
+      onClick={children.length === 0 ? (ev) => onClickPile(ev, pile) : null}
+    >
       <PileFrame />
       {children}
     </PileBase>

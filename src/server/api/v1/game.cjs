@@ -102,7 +102,190 @@ module.exports = (app) => {
           const moves = await app.models.Move.find({ game: req.params.id });
           state.moves = moves.map((move) => filterMoveForResults(move));
         }
+        results.drawCount = game.drawCount;
         res.status(200).send(Object.assign({}, results, state));
+      }
+    } catch (err) {
+      console.log(`Game.get failure: ${err}`);
+      res.status(404).send({ error: `unknown game: ${req.params.id}` });
+    }
+  });
+
+  const precedes = (card1, card2) => {
+    console.log(card1, card2);
+    if (card1.value === "king" || card2.value === "ace") return false;
+    const list = [
+      "ace",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "jack",
+      "queen",
+      "king",
+    ];
+    return list.indexOf(card1.value) + 1 === list.indexOf(card2.value);
+  };
+  const checkSuit = (card1, card2) => {
+    console.log(card1, card2);
+    if (card1.suit === "spades" || card1.suit === "clubs") {
+      return card2.suit === "hearts" || card2.suit === "diamonds";
+    } else {
+      return card2.suit === "spades" || card2.suit === "clubs";
+    }
+  };
+
+  const checkStack = (stack, cards) => {
+    if (cards.length === 1) {
+      if (stack.length === 0 && cards[0].value === "ace") {
+        return true;
+      } else if (stack.length > 0) {
+        const topCard = stack[stack.length - 1];
+        if (topCard.suit === cards[0].suit && precedes(topCard, cards[0])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const checkPile = (pile, cards) => {
+    const leadCard = cards[0];
+    if (pile.length === 0 && leadCard.value === "king") {
+      return true;
+    } else if (pile.length > 0) {
+      const topCard = pile[pile.length - 1];
+      if (checkSuit(leadCard, topCard) && precedes(leadCard, topCard)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const checkMove = (state, cards, src, dest, drawCnt) => {
+    if (dest === "draw") return false;
+    if (dest.startsWith("stack")) {
+      return checkStack(state[dest], cards);
+    }
+    if (dest.startsWith("pile")) {
+      return checkPile(state[dest], cards);
+    }
+    if (dest === "discard") {
+      console.log(src, dest, cards.length, drawCnt)
+      return src === "draw" && cards.length < drawCnt+1;
+    }
+  };
+  let validateMove = (drawCnt, state, move) => {
+    const src = move.src;
+    const dest = move.dest;
+    const cards = move.cards;
+    if (checkMove(state, cards, src, dest, drawCnt)) {
+      let newSrc = [],
+        newDest = [];
+      if (move.src === "draw" && state[move.src].length == 0) {
+        newSrc = state["discard"];
+        newSrc.map((card) => (card.up = false));
+      } else {
+        move.cards.map((card) => (card.up = true));
+        newDest =
+          state[move.dest].length === 0
+            ? move.cards
+            : [...state[move.dest], ...move.cards];
+        newSrc = state[move.src].slice(0, -move.cards.length);
+        if (newSrc.length > 0 && move.src !== "draw")
+          newSrc.slice(-1)[0].up = true;
+      }
+
+      const newState = {
+        ...state,
+        [move.src]: newSrc,
+        [move.dest]: newDest,
+      };
+      return newState;
+    }
+  };
+
+  /**
+   * update game information with new moves
+   *
+   * @param (req.params.id} Id of game to update
+   * @return {200} new game information
+   */
+  app.put("/v1/game/:id", async (req, res) => {
+    if (!req.session.user)
+      return res.status(401).send({ error: "unauthorized" });
+    try {
+      let game = await app.models.Game.findById(req.params.id)
+        .populate("owner")
+        .exec();
+      if (!game) {
+        return res
+          .status(404)
+          .send({ error: `unknown game: ${req.params.id}` });
+      } else if (game.owner.username !== req.session.user.username) {
+        return res
+          .status(401)
+          .send({ error: `not owner of game: ${req.params.id}` });
+      } else if (!game.active) {
+        return res
+          .status(201)
+          .send({ won: true });
+      } else {
+        const drawCnt = game.drawCount;
+        const state = game.state.toJSON();
+        let move = req.body;
+
+        let newState = validateMove(drawCnt, state, move);
+        if (newState) {
+          move = new app.models.Move({
+            ...move,
+            game: req.params.id,
+            date: Date.now(),
+            user: req.session.user._id,
+          });
+          try {
+            let query = {};
+            await move.save();
+            if (
+              newState.stack1.length === 13 &&
+              newState.stack2.length === 13 &&
+              newState.stack3.length === 13 &&
+              newState.stack4.length === 13
+            ) {
+              query = {
+                $inc: { moves: 1 }, 
+                $set: {
+                  state: newState,
+                  won: true,
+                  active: false,
+                  end: Date.now(),
+                },
+              };
+            } else {
+              query = {
+                $inc: { moves: 1 }, 
+                $set: { state: newState }, 
+              };
+            }
+            // Save game to user's document too
+            await app.models.Game.findByIdAndUpdate(req.params.id, query);
+            if (newState.won) {
+              res.status(201).send({ won: true });
+            } else{
+            res.status(200).send(newState);
+          }
+          } catch (err) {
+            console.log("Failed to save game state", err);
+            res.status(400).send({ error: "Failed updating game" });
+          }
+        } else {
+          res.status(400).send({ error: "Invalid move" });
+        }
       }
     } catch (err) {
       console.log(`Game.get failure: ${err}`);
