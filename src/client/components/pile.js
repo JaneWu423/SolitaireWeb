@@ -11,7 +11,16 @@ const CardImg = styled.img`
   width: 100%;
 `;
 
-export const Card = ({ card, top, left, onClick, pile, onDragStart, onDragOver, onDrop }) => {
+export const Card = ({
+  card,
+  top,
+  left,
+  onClick,
+  pile,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}) => {
   const source = card.up
     ? `/images/${card.value}_of_${card.suit}.png`
     : "/images/face_down.jpg";
@@ -20,7 +29,7 @@ export const Card = ({ card, top, left, onClick, pile, onDragStart, onDragOver, 
         left: `${left}%`,
         top: `${top}%`,
         border: "solid 3px yellow",
-        borderRadius: "5px"
+        borderRadius: "5px",
       }
     : { left: `${left}%`, top: `${top}%` };
   const id = `${card.suit}:${card.value}`;
@@ -60,7 +69,7 @@ export const Pile = ({
   onDragStart,
   onDrop,
   onDragOver,
-  onDropPile
+  onDropPile,
 }) => {
   const children = cards.map((card, i) => {
     const top = horizontal ? 0 : i * spacing;
@@ -81,9 +90,13 @@ export const Pile = ({
   });
   return (
     <PileBase
-      onClick={(ev) => onClickPile(ev, pile)}
+      onClick={pile !== "discard" ? (ev) => onClickPile(ev, pile) : null}
       onDragOver={onDragOver}
-      onDrop={pile !== "discard" && pile !== "draw" ? (ev) => onDropPile(ev, pile) : null}
+      onDrop={
+        pile !== "discard" && pile !== "draw"
+          ? (ev) => onDropPile(ev, pile)
+          : null
+      }
     >
       <PileFrame />
       {children}

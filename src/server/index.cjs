@@ -27,15 +27,16 @@ const setupServer = async () => {
   app.engine("pug", require("pug").__express);
   app.set("views", __dirname);
   app.use(express.static(path.join(__dirname, "../../public")));
+  
+  
   // Setup pipeline session support
+  // used redis for session storage
   const sessionClient = redis.createClient({
     host: "localhost",
     port: 6379,
     legacyMode: false,
   });
-
   sessionClient.connect().catch(console.error);
-
   app.use(
     session({
       name: "session",
@@ -49,6 +50,8 @@ const setupServer = async () => {
     })
   );
 
+  // If do not want to use redis, comment out above and uncomment below
+  
   // app.store = session({
   //   name: "session",
   //   secret: "grahamcardrules",
