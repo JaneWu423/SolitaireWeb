@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Pile } from "./pile.js";
-import { set } from "../../server/models/card_state.cjs";
 
 const CardRow = styled.div`
   position: relative;
@@ -17,6 +16,7 @@ const CardRow = styled.div`
   margin-bottom: 2em;
 `;
 
+// changed to 0.5 so draw 3 fits on screen
 const CardRowGap = styled.div`
   flex-grow: 0.5;
 `;
@@ -45,10 +45,13 @@ export const Game = () => {
     draw: [],
     discard: [],
   });
+  // record what cards are selected
   let [target, setTarget] = useState(undefined);
+  // record how many cards should be drawn
   let [drawcnt, setDrawcnt] = useState(1);
+  // record if game is won
   let [won, setWon] = useState(null);
-  let [startDrag, setStartDrag] = useState({ x: 0, y: 0 });
+  // let [startDrag, setStartDrag] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const getGameState = async () => {
@@ -70,10 +73,15 @@ export const Game = () => {
         draw: data.draw,
         discard: data.discard,
       });
+      if(data.won){
+        console.log("Game Won!")
+        setWon("Game Won!");
+      }
     };
     getGameState();
   }, [id]);
 
+  // deselect all cards
   const deselect = () => {
     if (target) {
       setState({
@@ -84,13 +92,14 @@ export const Game = () => {
         }),
       });
       setTarget(undefined);
-      console.log("deselect");
     }
   };
 
+  // add event listener for escape key
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
+        console.log("deselect");
         deselect();
       }
     };
@@ -100,6 +109,7 @@ export const Game = () => {
     };
   }, [target]);
 
+  // update game state
   const updateView = (move) => {
     fetch(`/v1/game/${id}`, {
       method: "PUT",
@@ -113,11 +123,11 @@ export const Game = () => {
           } else {
             console.log(`Error: ${response.status} - ${response.statusText}`);
           }
-        } else if(response.status === 201){
-          setWon("Game Won!")
-          console.log("Game Won!")
-        }
-        else {
+        } else {
+          if (response.status === 201) {
+            setWon("Game Won!");
+            console.log("Game Won!");
+          }
           response.json().then((data) => {
             setState({
               pile1: data.pile1,
@@ -141,12 +151,35 @@ export const Game = () => {
         console.log("Ajax error: ", err);
       });
   };
-  const onClick = (ev, card, pile) => {
+
+  // handle drag start
+  const onDragStart = (ev, card, pile) => {
+    deselect();
+    if (pile === "draw") {
+      return;
+    }
+    if (card.up && pile !== "draw") {
+      const idx = state[pile].indexOf(card);
+      const cards =
+        pile == "discard" ? state.discard.slice(-1) : state[pile].slice(idx);
+      const updatedPile = state[pile].map((card) =>
+        cards.includes(card) ? { ...card, select: true } : card
+      );
+      setState({ ...state, [pile]: updatedPile });
+      setTarget({ cards: cards, pile: pile });
+    } else {
+      deselect();
+      console.log("deselect");
+    }
+  };
+
+  // handle drop
+  const onDrop = (ev, card, pile) => {
+    ev.preventDefault();
     ev.stopPropagation();
     if (card.up && pile !== "draw") {
       if (target) {
         if (target.pile !== pile && pile !== "discard") {
-          console.log("destination: ", pile);
           const updatedState = {
             ...state,
             [target.pile]: state[target.pile].map(
@@ -162,9 +195,39 @@ export const Game = () => {
           console.log(move);
           updateView(move);
         }
-         deselect();
+      }
+    }
+    deselect();
+  };
+
+  // handle drag over
+  const onDragOver = (ev) => {
+    ev.preventDefault();
+  };
+
+  // handle click
+  const onClick = (ev, card, pile) => {
+    ev.stopPropagation();
+    if (card.up && pile !== "draw") {
+      if (target) {
+        if (target.pile !== pile && pile !== "discard") {
+          const updatedState = {
+            ...state,
+            [target.pile]: state[target.pile].map(
+              ({ select, ...rest }) => rest
+            ),
+          };
+          setState(updatedState);
+          const move = {
+            cards: target.cards,
+            src: target.pile,
+            dest: pile,
+          };
+          console.log(move);
+          updateView(move);
+        }
+        deselect();
       } else {
-        console.log("select", card);
         const idx = state[pile].indexOf(card);
         const cards =
           pile == "discard" ? state.discard.slice(-1) : state[pile].slice(idx);
@@ -187,7 +250,7 @@ export const Game = () => {
         src: "draw",
         dest: "discard",
       };
-      console.log(move, state.discard.length, drawcnt);
+      console.log(`draw ${drawcnt}`, move);
       updateView(move);
       setTarget(undefined);
     } else {
@@ -196,11 +259,11 @@ export const Game = () => {
     }
   };
 
+  // handle click on empty pile
   const onClickPile = (ev, pile) => {
+    ev.stopPropagation();
     if (pile !== "discard" && pile !== "draw") {
-      ev.stopPropagation();
       if (target) {
-        console.log("destination: ", pile);
         const updatedState = {
           ...state,
           [target.pile]: state[target.pile].map(({ select, ...rest }) => rest),
@@ -229,42 +292,84 @@ export const Game = () => {
     }
   };
 
+  // handle drop on empty pile
+  const onDropPile = (ev, pile) => {
+    ev.preventDefault();
+    if (pile !== "discard" && pile !== "draw") {
+      if (target) {
+        const updatedState = {
+          ...state,
+          [target.pile]: state[target.pile].map(({ select, ...rest }) => rest),
+        };
+        setState(updatedState);
+        const move = {
+          cards: target.cards,
+          src: target.pile,
+          dest: pile,
+        };
+        console.log(move);
+        updateView(move);
+      }
+    }
+    deselect();
+  };
+
+  // render the game
   return (
-    <GameBase onClick={deselect}>
+    <GameBase onClick={deselect} onDragOver={onDragOver} onDrop={deselect}>
       <CardRow>
         <Pile
           cards={state.stack1}
           spacing={0}
           onClick={onClick}
-          pile={"stack1"}
           onClickPile={onClickPile}
+          onDragStart={onDragStart}
+          pile={"stack1"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.stack2}
           spacing={0}
           onClick={onClick}
-          pile={"stack2"}
           onClickPile={onClickPile}
+          onDragStart={onDragStart}
+          pile={"stack2"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.stack3}
           spacing={0}
           onClick={onClick}
-          pile={"stack3"}
           onClickPile={onClickPile}
+          onDragStart={onDragStart}
+          pile={"stack3"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.stack4}
           spacing={0}
           onClick={onClick}
-          pile={"stack4"}
           onClickPile={onClickPile}
+          onDragStart={onDragStart}
+          pile={"stack4"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <CardRowGap />
         <Pile
           cards={state.draw}
           spacing={0}
           onClick={onClick}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
           pile={"draw"}
           onClickPile={onClickPile}
         />
@@ -275,54 +380,84 @@ export const Game = () => {
               : state.discard
           }
           onClick={onClick}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
           spacing={15}
           horizontal={true}
           pile={"discard"}
-          onClickPile={onClickPile}
         />
       </CardRow>
       <CardRow>
         <Pile
           cards={state.pile1}
+          onDragStart={onDragStart}
           onClick={onClick}
-          pile={"pile1"}
           onClickPile={onClickPile}
+          pile={"pile1"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.pile2}
+          onDragStart={onDragStart}
           onClick={onClick}
-          pile={"pile2"}
           onClickPile={onClickPile}
+          pile={"pile2"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.pile3}
+          onDragStart={onDragStart}
           onClick={onClick}
-          pile={"pile3"}
           onClickPile={onClickPile}
+          pile={"pile3"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.pile4}
+          onDragStart={onDragStart}
           onClick={onClick}
-          pile={"pile4"}
           onClickPile={onClickPile}
+          pile={"pile4"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.pile5}
+          onDragStart={onDragStart}
           onClick={onClick}
-          pile={"pile5"}
           onClickPile={onClickPile}
+          pile={"pile5"}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.pile6}
-          onClick={onClick}
+          onDragStart={onDragStart}
           pile={"pile6"}
+          onClick={onClick}
           onClickPile={onClickPile}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
         <Pile
           cards={state.pile7}
-          onClick={onClick}
+          onDragStart={onDragStart}
           pile={"pile7"}
+          onClick={onClick}
           onClickPile={onClickPile}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDropPile={onDropPile}
         />
       </CardRow>
       {won ? (

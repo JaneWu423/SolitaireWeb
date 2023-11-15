@@ -8,7 +8,7 @@ import styled from "styled-components";
 
 const Game = ({ game }) => {
   const date = new Date(game.start);
-  const url = `/${game.active ? "game" : "staus"}/${game.id}`;
+  const url = `/${game.active ? "game" : "status"}/${game.id}`;
   return (
     <tr>
       <td>
