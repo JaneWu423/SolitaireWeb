@@ -51,7 +51,7 @@ const setupServer = async () => {
   );
 
   // If do not want to use redis, comment out above and uncomment below
-  
+
   // app.store = session({
   //   name: "session",
   //   secret: "grahamcardrules",

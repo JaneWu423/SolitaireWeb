@@ -12,6 +12,6 @@ const LandingBase = styled.div`
 
 export const Landing = () => (
   <LandingBase>
-    <h1>This is my landing page!</h1>
+    <h1>This is my Solitaire game!</h1>
   </LandingBase>
 );
