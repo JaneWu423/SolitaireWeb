@@ -96,7 +96,7 @@ module.exports = (app, conf) => {
           // Regenerate session when signing in to prevent fixation
           await req.session.regenerate(() => {
             req.session.user = {
-              ...exist,
+              ...exist._doc,
               token: access_token,
             };
             console.log(`Session.login success: ${exist.username}`);
@@ -122,14 +122,14 @@ module.exports = (app, conf) => {
         try {
           let loginUser = new app.models.User(userState);
           await loginUser.save();
-          await req.session.regenerate(() => {
-            req.session.user = {
-              ...loginUser,
-              token: access_token,
-            };
-            console.log(`Session.login success: ${userState.username}`);
-            res.redirect("/handle/" + userState.username);
-          });
+
+          req.session.user = {
+            ...loginUser,
+            token: access_token,
+          };
+          console.log(`Session.login success: ${userState.username}`);
+          res.redirect("/handle/" + userState.username);
+  
         } catch (err) {
           console.log(err);
           // Error if username is already in use
