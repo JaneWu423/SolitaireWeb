@@ -16,6 +16,7 @@ export const Landing = () => (
     <h1 style={{ color: "#002266" }}>This is my Solitaire game!</h1>
     <h3 style={{ color: "lightblue" }}>Task completed:</h3>
     <ul style={{ color: "#002266" }}>
+      <li>Highlight selection & Draggable</li>
       <li>Enable modification of a user's profile</li>
       <li>Fully working "results" page</li>
       <li>
