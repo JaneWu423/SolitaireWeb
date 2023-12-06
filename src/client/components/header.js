@@ -5,19 +5,12 @@ import React, { Fragment } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import md5 from "md5";
 
 /**
  * @return {string}
  */
-export function GravHash(email, size) {
-  let hash = email && email.replace(/^\s\s*/, "").replace(/\s\s*$/, "");
-  hash = hash && hash.toLowerCase();
-  hash = hash && md5(hash);
-  return `https://www.gravatar.com/avatar/${hash}?size=${size}`;
-}
 
-const fontColor = "#c4a1a1";
+const fontColor = "lightblue";
 
 const HeaderLeftBase = styled.div`
   flex-grow: 1;
@@ -40,10 +33,10 @@ const HeaderLeft = ({ user }) => {
     <HeaderLeftBase>
       {user !== "" ? (
         <Link to={`/profile/${user}`}>
-          <h2>GrahamCard</h2>
+          <h2>JaneCard</h2>
         </Link>
       ) : (
-        <h2>GrahamCard</h2>
+        <h2>JaneCard</h2>
       )}
     </HeaderLeftBase>
   );
@@ -67,7 +60,7 @@ const HeaderRightBase = styled.div`
   }
 `;
 
-const HeaderRight = ({ user, email }) => {
+const HeaderRight = ({ user, avatar }) => {
   const isLoggedIn = user !== "";
   return (
     <HeaderRightBase $vertical={isLoggedIn}>
@@ -75,7 +68,7 @@ const HeaderRight = ({ user, email }) => {
         <Fragment>
           <Link to="/logout">Log Out</Link>
           <Link to={`/profile/${user}`}>
-            <img alt="go to profile" src={GravHash(email, 40)} />
+            <img alt="go to profile" src={avatar} style={{width:"40px",height:"40px"}}/>
           </Link>
         </Fragment>
       ) : (
@@ -100,17 +93,17 @@ HeaderRight.propTypes = {
 const HeaderBase = styled.div`
   grid-area: hd;
   display: flex;
-  background: #000;
+  background: #002266;
 `;
 
-export const Header = ({ user = "", email = "" }) => (
+export const Header = ({ user = "", avatar = "" }) => (
   <HeaderBase>
     <HeaderLeft user={user} />
-    <HeaderRight user={user} email={email} />
+    <HeaderRight user={user} avatar={avatar} />
   </HeaderBase>
 );
 
 Header.propTypes = {
   user: PropTypes.string,
-  email: PropTypes.string,
+  avatar: PropTypes.string,
 };

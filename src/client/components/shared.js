@@ -61,7 +61,7 @@ export const ModalNotify = ({ msg = "", onAccept, ...props }) => {
 
 export const FormBase = styled.form`
   display: grid;
-  grid-template-columns: 30% 70%;
+  grid-template-columns: 35% 70%;
   grid-auto-rows: minmax(10px, auto);
   padding: 0.1em;
   @media (min-width: 500px) {
@@ -77,19 +77,25 @@ export const FormLabel = styled.label`
 
 export const FormInput = styled.input`
   margin: 0.5em 0;
-  width: 75%;
+  width: 40%;
   padding-left: 5px;
 `;
 
 export const FormButton = styled.button`
-  max-width: 200px;
-  min-width: 150px;
+  margin-top: 1em;
+  max-width: 150px;
+  min-width: 50px;
   max-height: 2em;
   background: #6495ed;
   border: none;
   border-radius: 5px;
   line-height: 2em;
   font-size: 0.8em;
+  color: lightblue;
+  &:hover {
+    background: lightblue;
+    color: #FFF;
+  }
 `;
 
 export const FormSelect = styled.select`

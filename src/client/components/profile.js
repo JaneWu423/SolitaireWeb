@@ -5,7 +5,6 @@ import React, { Fragment, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Link, useParams } from "react-router-dom";
 import styled from "styled-components";
-import { GravHash } from "./header.js";
 import { GameList } from "./game-list.js";
 import {
   ErrorMessage,
@@ -13,6 +12,7 @@ import {
   InfoData,
   InfoLabels,
   ShortP,
+  FormInput
 } from "./shared.js";
 
 const ProfileBlockBase = styled.div`
@@ -39,11 +39,11 @@ const ProfileImage = styled.img`
   }
 `;
 
-const ProfileBlock = (props) => {
+const ProfileBlock = ({props, editOn, update}) => {
   return (
     <ProfileBlockBase>
-      <ProfileImage src={GravHash(props.primary_email, 200)} />
-      <InfoBlock>
+      <ProfileImage src={props.avatar} />
+      <InfoBlock style={{marginTop:"1em", marginLeft:"2em"}}>
         <InfoLabels>
           <p>Username:</p>
           <p>First Name:</p>
@@ -53,33 +53,89 @@ const ProfileBlock = (props) => {
         </InfoLabels>
         <InfoData>
           <ShortP>{props.username}</ShortP>
-          <ShortP>{props.first_name}</ShortP>
-          <ShortP>{props.last_name}</ShortP>
-          <ShortP>{props.city}</ShortP>
-          <ShortP>{props.primary_email}</ShortP>
+          {editOn ?  <div style={{display:"flex",flexDirection:"column"}}><FormInput
+            id="first_name"
+            name="first_name"
+            type="text"
+            placeholder={props.first_name ? props.first_name : "-"}
+            value={props.first_name}
+            onChange={(ev) => update({...props, first_name: ev.target.value})}
+          />
+          <FormInput
+            id="last_name"
+            name="last_name"
+            type="text"
+            placeholder={props.last_name ? props.last_name : "-"}
+            value={props.last_name}
+            onChange={(ev) => update({...props, last_name: ev.target.value})}
+          />
+          <FormInput
+            id="city"
+            name="city"
+            type="city"
+            placeholder={props.city ? props.city : "-"}
+            value={props.city}
+            onChange={(ev) => update({...props, city: ev.target.value})}
+          /> </div>:
+            <Fragment>
+              <ShortP>{props.first_name ? props.first_name : "-"}</ShortP>
+              <ShortP>{props.last_name ? props.last_name : "-"}</ShortP>
+              <ShortP>{props.city ? props.city : "-"}</ShortP>
+            </Fragment>
+          }
+          <ShortP>{props.primary_email == "no@email.com"?"-":props.primary_email}</ShortP>
         </InfoData>
       </InfoBlock>
     </ProfileBlockBase>
   );
 };
 
+
 const EditLinkBase = styled.div`
-  grid-area: sb;
-  display: none;
+  position: absolute;
+  top: 10em;
+  display: flex;
+  flex-direction: column;
   & > a {
-    cursor: not-allowed;
+    text-decoration: none;
+    color: #002266;
   }
   @media (min-width: 500px) {
     display: inherit;
   }
 `;
 
-const EditLink = ({ show }) => {
-  return show ? (
+const EditButton = styled.button`
+  margin-top: 1em;
+  max-width: 150px;
+  min-width: 50px;
+  max-height: 2em;
+  background: #002266;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  line-height: 2em;
+  font-size: 0.8em;
+  &:hover {
+    background: lightblue;
+    color: #fff;
+  }
+`;
+
+const EditLink = ({ text, onFunc }) => {
+  return (
     <EditLinkBase>
-      <Link to="/edit">Edit Profile</Link>
+      {text.map((item, index) => (
+        <EditButton
+          key={index}
+          style={{ marginLeft: "1em"}}
+          onClick={onFunc[index]}
+        >
+          {item}
+        </EditButton>
+      ))}
     </EditLinkBase>
-  ) : null;
+  );
 };
 
 const ProfileBase = styled.div`
@@ -100,6 +156,7 @@ export const Profile = (props) => {
     games: [],
     error: "",
   });
+  let [editOn, setEditOn] = useState(false);
 
   const fetchUser = (username) => {
     fetch(`/v1/user/${username}`)
@@ -114,14 +171,51 @@ export const Profile = (props) => {
     fetchUser(username);
   }, [username]);
 
+  const onClick = () => {
+    setEditOn(true);
+  }
+
+  const onCancel = () => {
+    fetchUser(username);
+    setEditOn(false);
+  }
+
+  const onSave = () => {
+    fetch(`/v1/user`, {
+      body: JSON.stringify({
+        first_name: state.first_name,
+        last_name: state.last_name,
+        city: state.city,
+      }),
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "content-type": "application/json",
+      },
+    }).then((res) => {
+      if (res.ok) {
+        setEditOn(false);
+        fetchUser(username);
+      } else {
+          setState({ ...state, error: res.statusText });
+      }
+    });
+  }
+
   // Is the logged-in user viewing their own profile
   const isUser = state.username === props.currentUser;
   return (
     <Fragment>
-      <EditLink show={isUser} />
+      {isUser && editOn ? (
+        <EditLink text={["Save Edit", "Cancel"]} onFunc={[onSave, onCancel]} />
+      ) : (
+        isUser && (
+          <EditLink text={["Edit Profile"]} onFunc={[onClick]} />
+        )
+      )}
       <ProfileBase>
         <ErrorMessage msg={state.error} hide={true} />
-        <ProfileBlock {...state} />
+        <ProfileBlock props={state} editOn={editOn} update={setState} />
         <GameList toCreateGame={isUser} games={state.games} />
       </ProfileBase>
     </Fragment>

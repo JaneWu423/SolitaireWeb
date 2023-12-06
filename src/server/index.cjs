@@ -28,7 +28,6 @@ const setupServer = async () => {
   app.set("views", __dirname);
   app.use(express.static(path.join(__dirname, "../../public")));
   
-  
   // Setup pipeline session support
   // used redis for session storage
   const sessionClient = redis.createClient({
@@ -88,6 +87,9 @@ const setupServer = async () => {
 
   // Import our routes
   require("./api/index.cjs")(app);
+
+  // github sso
+  require("./sso_auth.cjs")(app, conf);
 
   // Give them the SPA base page
   app.get("*", (req, res) => {

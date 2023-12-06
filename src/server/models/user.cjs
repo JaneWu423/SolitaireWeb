@@ -20,6 +20,7 @@ let User = new Schema({
   first_name: { type: String, default: "" },
   last_name: { type: String, default: "" },
   city: { type: String, default: "" },
+  avatar: { type: String, default: "/images/icon.png" },
   hash: { type: String, required: true },
   salt: { type: String, required: true },
   games: [{ type: Schema.Types.ObjectId, ref: "Game" }],
@@ -53,6 +54,7 @@ User.pre("save", function (next) {
   this.first_name = this.first_name.replace(/<(?:.|\n)*?>/gm, "");
   this.last_name = this.last_name.replace(/<(?:.|\n)*?>/gm, "");
   this.city = this.city.replace(/<(?:.|\n)*?>/gm, "");
+  this.avatar = this.avatar.replace(/<(?:.|\n)*?>/gm, "");
   next();
 });
 

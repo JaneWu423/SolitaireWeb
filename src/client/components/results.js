@@ -7,16 +7,36 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import { ErrorMessage, InfoBlock, InfoData, InfoLabels } from "./shared.js";
 
+
+const formatDate = (date) => {
+  if (!date) {
+    return "--";
+  }
+
+  const month = date.toLocaleString("default", { month: "short" });
+  const day = date.getDate();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const seconds = date.getSeconds().toString().padStart(2, "0");
+
+  return `${month} ${day} ${hours}:${minutes}:${seconds}`;
+};
+
 const Move = ({ move, index }) => {
-  const duration = Date.now() - move.date;
+  const cards = move.cards.map((card) => `${card.value} of ${card.suit}`);
+  const cardsStr = cards.join(", ");
+
+  const timePlayed = formatDate(new Date(move.date));
+  
+
   return (
     <tr>
       <th>{move.id ? move.id : index + 1}</th>
-      <th>{duration} seconds</th>
+      <th>{timePlayed}</th>
       <th>
-        <Link to={`/profile/${move.player}`}>{move.player}</Link>
+        <Link to={`/profile/${move.user}`}>{move.user}</Link>
       </th>
-      <th>{move.move}</th>
+      <th>{`${cardsStr} from ${move.src} to ${move.dest}`}</th>
     </tr>
   );
 };
@@ -27,7 +47,6 @@ Move.propTypes = {
 };
 
 const MovesListTable = styled.table`
-  margin: 1em;
   width: 90%;
   min-height: 4em;
   border: 1px solid black;
@@ -40,6 +59,7 @@ const MovesListTable = styled.table`
   }
 `;
 
+
 const MovesList = ({ moves }) => {
   let moveElements = moves.map((move, index) => (
     <Move key={index} move={move} index={index} />
@@ -49,7 +69,7 @@ const MovesList = ({ moves }) => {
       <thead>
         <tr>
           <th>Id</th>
-          <th>Duration</th>
+          <th>Time Moved</th>
           <th>Player</th>
           <th>Move Details</th>
         </tr>
@@ -59,23 +79,29 @@ const MovesList = ({ moves }) => {
   );
 };
 
-const GameDetail = ({ start, moves, score, cards_remaining, active }) => {
+const containerStyle = {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+};
+
+const GameDetail = ({ start, moves, score, cards_remaining,won, active }) => {
   const duration = start ? (Date.now() - start) / 1000 : "--";
   return (
-    <InfoBlock>
+    <InfoBlock style={containerStyle}>
       <InfoLabels>
         <p>Duration:</p>
         <p>Number of Moves:</p>
         <p>Points:</p>
         <p>Cards Remaining:</p>
-        <p>Able to Move:</p>
+        <p>Game Status:</p>
       </InfoLabels>
       <InfoData>
         <p>{duration} seconds</p>
         <p>{moves.length}</p>
         <p>{score}</p>
         <p>{cards_remaining}</p>
-        <p>{active ? "Active" : "Complete"}</p>
+        <p>{active ? "Active" : won? "Won" : "No Move Moves"}</p>
       </InfoData>
     </InfoBlock>
   );
@@ -87,6 +113,7 @@ GameDetail.propTypes = {
   score: PropTypes.number.isRequired,
   cards_remaining: PropTypes.number.isRequired,
   active: PropTypes.bool.isRequired,
+  won: PropTypes.bool.isRequired,
 };
 
 const ResultsBase = styled.div`
@@ -96,31 +123,54 @@ const ResultsBase = styled.div`
   justify-content: center;
 `;
 
+
 export const Results = () => {
   const { id } = useParams();
   // Initialize the state
   let [game, setGame] = useState({
-    start: 0,
+    owner: null,
+    start: Date.now(),
+    end: null,
+    state: null,
+    game: null,
+    active: false,
+    color: null,
+    drawCount: null,
     score: 0,
-    cards_remaining: 0,
-    active: true,
+    won: false,
     moves: [],
+    cards_remaining: 52,
+    num_moves: 0,
   });
   let [error, setError] = useState("");
   // Fetch data on load
   useEffect(() => {
-    fetch(`/v1/game/${id}`)
+    fetch(`/v1/game/${id}?moves`)
       .then((res) => res.json())
       .then((data) => {
-        setGame(data);
-      })
+        setGame({
+            owner: data.owner,
+            start: data.start,
+            end: data.end,
+            state: data.state,
+            game: data.game,
+            active: data.active,
+            color: data.color,
+            drawCount: data.drawCount,
+            score: data.score,
+            won: data.won,
+            moves: data.move_details,
+            cards_remaining: data.cards_remaining,
+            num_moves: data.num_moves,
+          });
+        })
       .catch((err) => console.log(err));
   }, [id]);
 
   return (
     <ResultsBase>
       <ErrorMessage msg={error} hide={true} />
-      <h4>Game Detail</h4>
+      <h2 style={{textAlign:"center"}}>Game Detail</h2>
       <GameDetail {...game} />
       <MovesList moves={game.moves} />
     </ResultsBase>

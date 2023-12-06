@@ -5,6 +5,8 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Pile } from "./pile.js";
+import { checkSuit, precedes } from "../../shared/index.cjs";
+import { FormButton } from "./shared.js";
 
 const CardRow = styled.div`
   position: relative;
@@ -27,6 +29,144 @@ const GameBase = styled.div`
   width: 100vw;
   height: 100vh;
 `;
+
+const checkPile2Stack = (state) => {
+  for (let i = 1; i < 5; i++) {
+    const stack = state[`stack${i}`];
+    if (stack.length > 0) {
+      const card = stack[stack.length - 1];
+      for (let j = 1; j < 8; j++) {
+        const pile = state[`pile${j}`];
+        if (pile.length > 0) {
+          const pileCard = pile[pile.length - 1];
+          if (pileCard.suit === card.suit && precedes(card, pileCard)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      for (let j = 1; j < 8; j++) {
+        const pile = state[`pile${j}`];
+        if (pile.length > 0 && pile[pile.length - 1].value === "ace") {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+const checkPile2Pile = (state) => {
+  for (let i = 1; i < 8; i++) {
+    const pile = state[`pile${i}`];
+    if (pile.length > 0) {
+      const index = pile.findIndex((card) => card.up === true);
+      if (index !== 0) {
+        const card = pile[index];
+        for (let j = 1; j < 8; j++) {
+          if (i !== j) {
+            const otherPile = state[`pile${j}`];
+            if (otherPile.length > 0) {
+              const otherCard = otherPile[otherPile.length - 1];
+              if (
+                checkSuit(card, otherCard) &&
+                precedes(card, otherCard) &&
+                otherCard.up
+              ) {
+                return true;
+              }
+            }else{
+              if(card.value === "king"){
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+};
+const checkDiscard2Pile = (state) => {
+  const discard = [...state.discard, ...state.draw];
+  if (state.drawCount === 3) {
+    if (discard.length > 2) {
+      for (let i = 0; i < discard.length; ++i) {
+        if (i % 3 == 2 && i == discard.length - 1) {
+          const card = discard[i];
+          for (let j = 1; j < 8; j++) {
+            const pile = state[`pile${j}`];
+            if (pile.length > 0) {
+              const pileCard = pile[pile.length - 1];
+              if (checkSuit(pileCard, card) && precedes(card, pileCard)) {
+                return true;
+              }
+            } else {
+              if (card.value === "ace") {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } else if (discard.length > 0) {
+      const card = discard[-1];
+      for (let j = 1; j < 8; j++) {
+        const pile = state[`pile${j}`];
+        if (pile.length > 0) {
+          const pileCard = pile[pile.length - 1];
+          if (checkSuit(pileCard, card) && precedes(card, pileCard)) {
+            return true;
+          }
+        } else {
+          if (card.value === "ace") {
+            return true;
+          }
+        }
+      }
+    }
+  } else {
+    if (discard.length > 0) {
+      for (let i = 0; i < discard.length; i++) {
+        const card = discard[i];
+        for (let j = 1; j < 8; j++) {
+          const pile = state[`pile${j}`];
+          if (pile.length > 0) {
+            const pileCard = pile[pile.length - 1];
+            if (checkSuit(pileCard, card) && precedes(card, pileCard)) {
+              return true;
+            }
+          } else {
+            if (card.value === "ace") {
+              return true;
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+};
+
+const checkAllUp = (state) => {
+  for (let i = 1; i < 8; i++) {
+    const pile = state[`pile${i}`];
+    if (pile.length > 0) {
+      const index = pile.findIndex((card) => card.up === false);
+      if (index !== -1) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+const checkNoMoves = (state) => {
+  if (!checkAllUp(state)&&!checkPile2Stack(state) && !checkDiscard2Pile(state)&&!checkPile2Pile(state)) {
+    return true;
+  }
+  return false;
+};
 
 export const Game = () => {
   const { id } = useParams();
@@ -51,7 +191,8 @@ export const Game = () => {
   let [drawcnt, setDrawcnt] = useState(1);
   // record if game is won
   let [won, setWon] = useState(null);
-  // let [startDrag, setStartDrag] = useState({ x: 0, y: 0 });
+  let [auto, setAuto] = useState(false);
+  let [end, setEnd] = useState(false);
 
   useEffect(() => {
     const getGameState = async () => {
@@ -72,10 +213,14 @@ export const Game = () => {
         stack4: data.stack4,
         draw: data.draw,
         discard: data.discard,
+        active: data.active
       });
-      if(data.won){
-        console.log("Game Won!")
+      if (data.won) {
+        console.log("Game Won!");
         setWon("Game Won!");
+      } else if (!data.active) {
+        console.log("Game Ended!");
+        setWon("Game Ended!");
       }
     };
     getGameState();
@@ -126,7 +271,8 @@ export const Game = () => {
         } else {
           if (response.status === 201) {
             setWon("Game Won!");
-            console.log("Game Won!");
+          }else if(response.status === 202){
+            setWon("Game Ended!");
           }
           response.json().then((data) => {
             setState({
@@ -143,6 +289,7 @@ export const Game = () => {
               stack4: data.stack4,
               draw: data.draw,
               discard: data.discard,
+              active: data.active
             });
           });
         }
@@ -314,6 +461,66 @@ export const Game = () => {
     deselect();
   };
 
+  useEffect(() => {
+    if (checkPile2Stack(state)) {
+      setAuto(true);
+    } else {
+      setAuto(false);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (checkNoMoves(state) && state.active) {
+      setEnd(true);
+    } else {
+      setEnd(false);
+    }
+  }, [state]);
+
+  // handle auto complete
+  const tryAuto = () => {
+    fetch(`/v1/game/auto/${id}`).then((res) => {
+      if (!res.ok) {
+        if (res.status === 400) {
+          console.log("Invalid move");
+        } else {
+          console.log(`Error: ${res.status} - ${res.statusText}`);
+        }
+      } else {
+        if (res.status === 201) {
+          setWon("Game Won!");
+          console.log("Game Won!");
+        }
+
+        res.json().then((data) => {
+          setState({
+            ...state,
+            pile1: data.pile1,
+            pile2: data.pile2,
+            pile3: data.pile3,
+            pile4: data.pile4,
+            pile5: data.pile5,
+            pile6: data.pile6,
+            pile7: data.pile7,
+            stack1: data.stack1,
+            stack2: data.stack2,
+            stack3: data.stack3,
+            stack4: data.stack4,
+          });
+          setAuto((prevAuto) => !prevAuto);
+        });
+      }
+    });
+  };
+  const endGame = () => {
+    fetch(`/v1/game/${id}?end`).then((res) => {
+      if (res.ok) {
+        setWon("Game Ended!");
+        setEnd(false);
+      }
+    });
+  };
+
   // render the game
   return (
     <GameBase onClick={deselect} onDragOver={onDragOver} onDrop={deselect}>
@@ -460,6 +667,28 @@ export const Game = () => {
           onDropPile={onDropPile}
         />
       </CardRow>
+      {auto ? (
+        <div
+          style={{
+            position: "absolute",
+            top: "80%",
+            left: "50%",
+          }}
+        >
+          <FormButton onClick={tryAuto}>Auto Complete</FormButton>
+        </div>
+      ) : null}
+      {end ? (
+        <div
+          style={{
+            position: "absolute",
+            top: "80%",
+            left: "50%",
+          }}
+        >
+          <FormButton onClick={endGame}>No Moves - End Game</FormButton>
+        </div>
+      ) : null}
       {won ? (
         <div
           style={{

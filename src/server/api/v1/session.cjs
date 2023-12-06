@@ -31,7 +31,7 @@ module.exports = (app) => {
             // If a match, return 201:{ username, primary_email }
             res.status(200).send({
               username: user.username,
-              primary_email: user.primary_email,
+              avatar: user.avatar,
             });
           });
         } else {

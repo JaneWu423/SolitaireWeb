@@ -15,6 +15,7 @@ import { Profile } from "./components/profile.js";
 import { Start } from "./components/start.js";
 import { Results } from "./components/results.js";
 import { Game } from "./components/game.js";
+import { Handle } from "./components/handle.js";
 
 const defaultUser = {
   username: "",
@@ -22,6 +23,7 @@ const defaultUser = {
   last_name: "",
   primary_email: "",
   city: "",
+  avatar:"",
   games: [],
 };
 
@@ -107,9 +109,10 @@ const MyApp = () => {
   return (
     <BrowserRouter>
       <GridBase>
-        <Header user={state.username} email={state.primary_email} />
+        <Header user={state.username} avatar={state.avatar} />
         <Routes>
           <Route exact path="/" element={<Landing />} />
+          <Route path="/handle/:username" element={<Handle logIn={logIn} />} />
           <Route path="/login" element={<Login logIn={logIn} />} />
           <Route path="/logout" element={<Logout logOut={logOut} />} />
           <Route

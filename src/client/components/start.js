@@ -56,7 +56,10 @@ GameChoice.propTypes = {
 
 const StartBase = styled.div`
   grid-area: main;
-  margin: 1em;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-left: -10%
 `;
 
 const StartForm = styled.form`

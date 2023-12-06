@@ -11,7 +11,7 @@ import {
   FormButton,
   ModalNotify,
 } from "./shared.js";
-import { validPassword, validUsername } from "../../shared/index.js";
+import { validPassword, validUsername } from "../../shared/index.cjs";
 
 export const Register = () => {
   let navigate = useNavigate();

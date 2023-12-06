@@ -2,8 +2,8 @@
   "url": "http://localhost",
   "api_version": "/v1",
   "mongodb": "mongodb://127.0.0.1:27017/wuj43",
-  "port": 80,
-  "environments" : {
+  "port": 8080,
+  "environments": {
     "test": {
       "mongodb": "mongodb://127.0.0.1:27017/testing",
       "port": 8081
@@ -11,5 +11,11 @@
     "ci": {
       "mongodb": "mongodb://127.0.0.1:27017/testing"
     }
+  },
+  "github": {
+    "client_id": "52b7d21e5fa4a7f241c1",
+    "client_secret": "6799c185bbfdd934e3942e69f94a513e575c4d2b",
+    "scope": "read:repo",
+    "url": "http://localhost:8080/auth/github"
   }
 }

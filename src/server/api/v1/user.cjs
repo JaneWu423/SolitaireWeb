@@ -3,7 +3,7 @@
 
 const Joi = require("joi");
 const { filterGameForProfile } = require("../../solitare.cjs");
-const sharedPromise = import("../../../shared/index.js");
+const { validPassword, GravHash } = require("../../../shared/index.cjs");
 
 module.exports = (app) => {
   // Schema for user info validation
@@ -14,6 +14,7 @@ module.exports = (app) => {
     last_name: Joi.string().allow(""),
     city: Joi.string().default(""),
     password: Joi.string().min(8).required(),
+    avatar: Joi.string(),
   });
 
   /**
@@ -28,10 +29,11 @@ module.exports = (app) => {
    * @return {201, {username,primary_email}} Return username and others
    */
   app.post("/v1/user", async (req, res) => {
-    const { validPassword } = await sharedPromise;
     // Validate user input
+    console.log(validPassword);
     let data;
     try {
+      if(req.body.primary_email == "") req.body.avatar = GravHash(req.body.primary_email);
       data = await schema.validateAsync(req.body, { stripUnknown: true });
       // Deeper password validation
       const pwdErr = validPassword(data.password);
@@ -40,9 +42,9 @@ module.exports = (app) => {
         return res.status(400).send(pwdErr);
       }
     } catch (err) {
-      const message = err.details[0].message;
+      const message = err.details? err.details[0].message: err;
       console.log(`User.create validation failure: ${message}`);
-      return res.status(400).send({ error: message });
+      return res.status(400).send({ error: err.details });
     }
 
     // Try to create the user
@@ -52,7 +54,7 @@ module.exports = (app) => {
       // Send the happy response back
       res.status(201).send({
         username: data.username,
-        primary_email: data.primary_email,
+        avatar: data.avatar,
       });
     } catch (err) {
       console.log(err);
@@ -109,6 +111,7 @@ module.exports = (app) => {
         first_name: user.first_name,
         last_name: user.last_name,
         city: user.city,
+        avatar: user.avatar,
         games: filteredGames,
       });
     }
