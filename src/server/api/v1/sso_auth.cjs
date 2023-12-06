@@ -100,7 +100,7 @@ module.exports = (app, conf) => {
               token: access_token,
             };
             console.log(`Session.login success: ${req.session.user.username}`);
-            res.redirect("/handle/" + user.login.toLowerCase());
+            res.redirect("/handle/" + req.session.user.username.toLowerCase());
           });
         } else {
           // If not a match, return 401:unauthorized
@@ -120,15 +120,15 @@ module.exports = (app, conf) => {
           password: user.node_id,
         };
         try {
-          let user = new app.models.User(userState);
-          await user.save();
+          let loginUser = new app.models.User(userState);
+          await loginUser.save();
           req.session.regenerate(() => {
             req.session.user = {
-              ...user,
+              ...loginUser,
               token: access_token,
             };
             console.log(`Session.login success: ${req.session.user.username}`);
-            res.redirect("/handle/" + user.login.toLowerCase());
+            res.redirect("/handle/" + req.session.user.username);
           });
         } catch (err) {
           console.log(err);

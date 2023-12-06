@@ -88,7 +88,7 @@ const MyApp = () => {
 
   // Helper to check if the user is logged in or not
   const loggedIn = () => {
-    return state.username && state.primary_email;
+    return state.username && state.avatar;
   };
 
   // Helper to manage what happens when the user logs in
@@ -97,6 +97,7 @@ const MyApp = () => {
     const user = await response.json();
     localStorage.setItem("user", JSON.stringify(user));
     setState(user);
+    console.log()
   };
 
   // Helper for when a user logs out
