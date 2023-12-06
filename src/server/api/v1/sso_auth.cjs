@@ -128,7 +128,7 @@ module.exports = (app, conf) => {
               ...loginUser,
               token: access_token,
             };
-            console.log(`Session.login success: ${req.session.user.username}`);
+            console.log(`Session.login success: ${loginUser.username}`);
             res.redirect("/handle/" + req.session.user.username);
           });
         } catch (err) {
