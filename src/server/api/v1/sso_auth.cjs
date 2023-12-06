@@ -94,7 +94,7 @@ module.exports = (app, conf) => {
       if (exist) {
         if (await exist.authenticate(user.node_id)) {
           // Regenerate session when signing in to prevent fixation
-          req.session.regenerate(() => {
+          await req.session.regenerate(() => {
             req.session.user = {
               ...exist,
               token: access_token,
@@ -122,8 +122,7 @@ module.exports = (app, conf) => {
         try {
           let loginUser = new app.models.User(userState);
           await loginUser.save();
-          console.log(loginUser);
-          req.session.regenerate(() => {
+          await req.session.regenerate(() => {
             req.session.user = {
               ...loginUser,
               token: access_token,
