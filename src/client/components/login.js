@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
 import {
   ErrorMessage,
   FormBase,
@@ -13,7 +12,6 @@ import {
   FormButton,
   GitHubButton,
 } from "./shared.js";
-
 
 export const Login = (props) => {
   let navigate = useNavigate();
@@ -47,6 +45,7 @@ export const Login = (props) => {
     document.getElementById("username").focus();
   }, []);
 
+  // implemented both regular and Github Login
   return (
     <div style={{ gridArea: "main" }}>
       <ErrorMessage msg={error} />
@@ -74,7 +73,7 @@ export const Login = (props) => {
           Login
         </FormButton>
         <div />
-        <GitHubButton id="submitGit"/>
+        <GitHubButton id="submitGit" />
       </FormBase>
     </div>
   );

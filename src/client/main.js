@@ -24,7 +24,7 @@ const defaultUser = {
   last_name: "",
   primary_email: "",
   city: "",
-  avatar:"",
+  avatar: "",
   games: [],
 };
 
@@ -112,7 +112,7 @@ const MyApp = () => {
       <GridBase>
         <Header user={state.username} avatar={state.avatar} />
         <Routes>
-          <Route exact path="/" element={<Landing />} />
+          <Route exact path="*" element={<Landing />} />
           <Route path="/handle/:username" element={<Handle logIn={logIn} />} />
           <Route path="/login" element={<Login logIn={logIn} />} />
           <Route path="/logout" element={<Logout logOut={logOut} />} />

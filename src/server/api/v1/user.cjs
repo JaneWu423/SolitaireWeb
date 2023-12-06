@@ -30,7 +30,6 @@ module.exports = (app) => {
    */
   app.post("/v1/user", async (req, res) => {
     // Validate user input
-    console.log(validPassword);
     let data;
     try {
       if(req.body.primary_email == "") req.body.avatar = GravHash(req.body.primary_email);
@@ -57,7 +56,6 @@ module.exports = (app) => {
         avatar: data.avatar,
       });
     } catch (err) {
-      console.log(err);
       // Error if username is already in use
       if (err.code === 11000) {
         if (err.message.indexOf("username_1") !== -1)

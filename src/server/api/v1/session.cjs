@@ -43,7 +43,6 @@ module.exports = (app) => {
         res.status(500).send({ error: "internal server error" });
       }
     } catch (err) {
-      console.log(err);
       const message = err.details[0].message;
       console.log(`Session.login validation failure: ${message}`);
       res.status(400).send({ error: message });

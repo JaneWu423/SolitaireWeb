@@ -3,7 +3,7 @@
 
 import React, { Fragment, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { GameList } from "./game-list.js";
 import {
@@ -12,7 +12,7 @@ import {
   InfoData,
   InfoLabels,
   ShortP,
-  FormInput
+  FormInput,
 } from "./shared.js";
 
 const ProfileBlockBase = styled.div`
@@ -39,11 +39,11 @@ const ProfileImage = styled.img`
   }
 `;
 
-const ProfileBlock = ({props, editOn, update}) => {
+const ProfileBlock = ({ props, editOn, update }) => {
   return (
     <ProfileBlockBase>
       <ProfileImage src={props.avatar} />
-      <InfoBlock style={{marginTop:"1em", marginLeft:"2em"}}>
+      <InfoBlock style={{ marginTop: "1em", marginLeft: "2em" }}>
         <InfoLabels>
           <p>Username:</p>
           <p>First Name:</p>
@@ -53,43 +53,52 @@ const ProfileBlock = ({props, editOn, update}) => {
         </InfoLabels>
         <InfoData>
           <ShortP>{props.username}</ShortP>
-          {editOn ?  <div style={{display:"flex",flexDirection:"column"}}><FormInput
-            id="first_name"
-            name="first_name"
-            type="text"
-            placeholder={props.first_name ? props.first_name : "-"}
-            value={props.first_name}
-            onChange={(ev) => update({...props, first_name: ev.target.value})}
-          />
-          <FormInput
-            id="last_name"
-            name="last_name"
-            type="text"
-            placeholder={props.last_name ? props.last_name : "-"}
-            value={props.last_name}
-            onChange={(ev) => update({...props, last_name: ev.target.value})}
-          />
-          <FormInput
-            id="city"
-            name="city"
-            type="city"
-            placeholder={props.city ? props.city : "-"}
-            value={props.city}
-            onChange={(ev) => update({...props, city: ev.target.value})}
-          /> </div>:
+          {editOn ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <FormInput
+                id="first_name"
+                name="first_name"
+                type="text"
+                placeholder={props.first_name ? props.first_name : "-"}
+                value={props.first_name}
+                onChange={(ev) =>
+                  update({ ...props, first_name: ev.target.value })
+                }
+              />
+              <FormInput
+                id="last_name"
+                name="last_name"
+                type="text"
+                placeholder={props.last_name ? props.last_name : "-"}
+                value={props.last_name}
+                onChange={(ev) =>
+                  update({ ...props, last_name: ev.target.value })
+                }
+              />
+              <FormInput
+                id="city"
+                name="city"
+                type="city"
+                placeholder={props.city ? props.city : "-"}
+                value={props.city}
+                onChange={(ev) => update({ ...props, city: ev.target.value })}
+              />{" "}
+            </div>
+          ) : (
             <Fragment>
               <ShortP>{props.first_name ? props.first_name : "-"}</ShortP>
               <ShortP>{props.last_name ? props.last_name : "-"}</ShortP>
               <ShortP>{props.city ? props.city : "-"}</ShortP>
             </Fragment>
-          }
-          <ShortP>{props.primary_email == "no@email.com"?"-":props.primary_email}</ShortP>
+          )}
+          <ShortP>
+            {props.primary_email == "no@email.com" ? "-" : props.primary_email}
+          </ShortP>
         </InfoData>
       </InfoBlock>
     </ProfileBlockBase>
   );
 };
-
 
 const EditLinkBase = styled.div`
   position: absolute;
@@ -128,7 +137,7 @@ const EditLink = ({ text, onFunc }) => {
       {text.map((item, index) => (
         <EditButton
           key={index}
-          style={{ marginLeft: "1em"}}
+          style={{ marginLeft: "1em" }}
           onClick={onFunc[index]}
         >
           {item}
@@ -173,12 +182,12 @@ export const Profile = (props) => {
 
   const onClick = () => {
     setEditOn(true);
-  }
+  };
 
   const onCancel = () => {
     fetchUser(username);
     setEditOn(false);
-  }
+  };
 
   const onSave = () => {
     fetch(`/v1/user`, {
@@ -197,10 +206,10 @@ export const Profile = (props) => {
         setEditOn(false);
         fetchUser(username);
       } else {
-          setState({ ...state, error: res.statusText });
+        setState({ ...state, error: res.statusText });
       }
     });
-  }
+  };
 
   // Is the logged-in user viewing their own profile
   const isUser = state.username === props.currentUser;
@@ -209,9 +218,7 @@ export const Profile = (props) => {
       {isUser && editOn ? (
         <EditLink text={["Save Edit", "Cancel"]} onFunc={[onSave, onCancel]} />
       ) : (
-        isUser && (
-          <EditLink text={["Edit Profile"]} onFunc={[onClick]} />
-        )
+        isUser && <EditLink text={["Edit Profile"]} onFunc={[onClick]} />
       )}
       <ProfileBase>
         <ErrorMessage msg={state.error} hide={true} />

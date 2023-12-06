@@ -49,19 +49,6 @@ const setupServer = async () => {
     })
   );
 
-  // If do not want to use redis, comment out above and uncomment below
-
-  // app.store = session({
-  //   name: "session",
-  //   secret: "grahamcardrules",
-  //   resave: false,
-  //   saveUninitialized: false,
-  //   cookie: {
-  //     path: "/",
-  //   },
-  // });
-  // app.use(app.store);
-
   // Finish with the body parser
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -86,10 +73,7 @@ const setupServer = async () => {
   };
 
   // Import our routes
-  require("./api/index.cjs")(app);
-
-  // github sso
-  require("./sso_auth.cjs")(app, conf);
+  require("./api/index.cjs")(app, conf);
 
   // Give them the SPA base page
   app.get("*", (req, res) => {

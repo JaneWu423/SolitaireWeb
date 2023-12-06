@@ -9,14 +9,19 @@ import styled from "styled-components";
 const Game = ({ game }) => {
   const date = new Date(game.start);
   const url = `/${game.active ? "game" : "results"}/${game.id}`;
+  const results =  `/results/${game.id}`;
   return (
     <tr>
       <td>
         <Link to={url}>{game.active ? "Active" : "Complete"}</Link>
       </td>
       <td>{date.toLocaleString()}</td>
-      <td>{game.moves}</td>
-      <td>{game.score}</td>
+      <td>
+        <Link to={results}>{game.moves}</Link>
+      </td>
+      <td>
+        {game.score}
+      </td>
       <td>{game.game}</td>
     </tr>
   );

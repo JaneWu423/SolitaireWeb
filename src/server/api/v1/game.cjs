@@ -8,8 +8,7 @@ const {
   filterGameForProfile,
 } = require("../../solitare.cjs");
 
-const{ checkSuit, precedes } = require("../../../shared/index.cjs");
-
+const { validateMove, checkScore, checkAutoMove } = require("./helper.cjs");
 
 module.exports = (app) => {
   /**
@@ -34,7 +33,6 @@ module.exports = (app) => {
     try {
       const data = await schema.validateAsync(req.body, { stripUnknown: true });
       // Set up the new game
-      console.log(req.session.user, req.session.user._id);
       let newGame = {
         owner: req.session.user._id,
         active: true,
@@ -92,20 +90,24 @@ module.exports = (app) => {
         const state = game.state.toJSON();
         let results = filterGameForProfile(game);
         results.start = Date.parse(results.start);
-        results.cards_remaining = 52 -(state.stack1.length +
+        results.cards_remaining =
+          52 -
+          (state.stack1.length +
             state.stack2.length +
             state.stack3.length +
             state.stack4.length);
         // Do we need to grab the moves
         if (req.query.moves === "") {
-          try{
-          const moves = await app.models.Move.find({ game: req.params.id });
-          results.move_details = moves;
-        } catch (err){
-          console.log(`Move.get failure: ${err}`);
-          res.status(404).send({ error: `Failed to get move for: ${req.params.id}` });
-        };
-        }else if(req.query.end === ""){
+          try {
+            const moves = await app.models.Move.find({ game: req.params.id });
+            results.move_details = moves;
+          } catch (err) {
+            console.log(`Move.get failure: ${err}`);
+            res
+              .status(404)
+              .send({ error: `Failed to get move for: ${req.params.id}` });
+          }
+        } else if (req.query.end === "") {
           try {
             let query = {
               $set: {
@@ -132,91 +134,7 @@ module.exports = (app) => {
     }
   });
 
-  const checkStack = (stack, cards) => {
-    if (cards.length === 1) {
-      if (stack.length == 0 && cards[0].value == "ace") {
-        return true;
-      } else if (stack.length > 0) {
-        const topCard = stack[stack.length - 1];
-        if (topCard.suit === cards[0].suit && precedes(topCard, cards[0])) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
 
-  const checkPile = (pile, cards) => {
-    const leadCard = cards[0];
-    if (pile.length === 0 && leadCard.value === "king") {
-      return true;
-    } else if (pile.length > 0) {
-      const topCard = pile[pile.length - 1];
-      if (checkSuit(leadCard, topCard) && precedes(leadCard, topCard)) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const checkMove = (state, cards, src, dest, drawCnt) => {
-    if (dest === "draw") return false;
-    if (dest.startsWith("stack")) {
-      return checkStack(state[dest], cards);
-    }
-    if (dest.startsWith("pile")) {
-      return checkPile(state[dest], cards);
-    }
-    if (dest === "discard") {
-      return src === "draw" && cards.length < drawCnt + 1;
-    }
-  };
-  let validateMove = (drawCnt, state, move) => {
-    const src = move.src;
-    const dest = move.dest;
-    const cards = move.cards;
-    if (checkMove(state, cards, src, dest, drawCnt)) {
-      let newSrc = [],
-        newDest = [];
-      if (move.src === "draw" && state[move.src].length == 0) {
-        newSrc = state["discard"];
-        newSrc.map((card) => (card.up = false));
-
-        newSrc.reverse();
-      } else {
-        move.cards.map((card) => (card.up = true));
-        const moveCards =
-          drawCnt === 3 && move.dest === "discard"
-            ? move.cards.reverse()
-            : move.cards;
-        newDest =
-          state[move.dest].length === 0
-            ? moveCards
-            : [...state[move.dest], ...moveCards];
-        newSrc = state[move.src].slice(0, -moveCards.length);
-        if (newSrc.length > 0 && move.src !== "draw")
-          newSrc.slice(-1)[0].up = true;
-      }
-
-      const newState = {
-        ...state,
-        [move.src]: newSrc,
-        [move.dest]: newDest,
-      };
-      return newState;
-    }
-    return false;
-  };
-
-
-  const checkScore = (src, dest) => {
-    if(src.startsWith("pile") || dest.startsWith("stack")) return 10;
-    else if(src.startsWith("stack") && dest.startsWith("pile")) return -15;
-    else if(src.startsWith("discard") && dest.startsWith("pile")) return 5;
-    else if(src.startsWith("pile")) return 5;
-    else if(src.startsWith("draw")) return -1;
-    else return 0;
-  }
   /**
    * update game information with new moves
    *
@@ -241,10 +159,9 @@ module.exports = (app) => {
           .send({ error: `not owner of game: ${req.params.id}` });
       } else if (game.won) {
         return res.status(201).send(game.state);
-      } else if(!game.active){
+      } else if (!game.active) {
         return res.status(202).send(game.state);
-      }
-      else {
+      } else {
         const drawCnt = game.drawCount;
         const state = game.state.toJSON();
         let move = req.body;
@@ -282,8 +199,7 @@ module.exports = (app) => {
             } else {
               query = {
                 $inc: { moves: 1 },
-                $set: { state: newState,
-                  score: game.score + score },
+                $set: { state: newState, score: game.score + score },
               };
             }
             // Save game to user's document too
@@ -308,50 +224,11 @@ module.exports = (app) => {
     }
   });
 
-
-  const checkAutoMove = (drawCnt, state) => {
-    for (let i = 1; i < 5; i++) {
-      const stack = state[`stack${i}`];
-      if (stack.length > 0) {
-        const card = stack[stack.length - 1];
-        for (let j = 1; j < 8; j++) {
-          const pile = state[`pile${j}`];
-          if (pile.length > 0) {
-            const pileCard = pile[pile.length - 1];
-            if (card.suit == pileCard.suit && precedes(card, pileCard)) {
-              let move = {
-                src: `pile${j}`,
-                dest: `stack${i}`,
-                cards: [pileCard],
-              };
-              let newState = validateMove(drawCnt, state, move);
-              return [move, newState];
-            }
-          }
-        }
-      }else{
-        for (let j = 1; j < 8; j++) {
-          const pile = state[`pile${j}`];
-          if (pile.length > 0 && pile[pile.length - 1].value === "ace") {
-            const pileCard = pile[pile.length - 1];
-              let move = {
-                src: `pile${j}`,
-                dest: `stack${i}`,
-                cards: [pileCard],
-              };
-              let newState = validateMove(drawCnt, state, move);
-              return [move, newState];
-          }
-        }
-      }
-    }
-    return [];
-  };
   /**
-   * update game information with new moves
+   * initiate auto complete for game
    *
    * @param (req.params.id} Id of game to update
-   * @return {200} new game information
+   * @return {200} new game state after auto complete
    */
   app.get("/v1/game/auto/:id", async (req, res) => {
     if (!req.session.user) {
@@ -377,9 +254,9 @@ module.exports = (app) => {
         let moreAuto = true;
         let newState = state;
         let won = false;
-        while(moreAuto != false){
+        while (moreAuto != false) {
           const update = checkAutoMove(drawCnt, newState);
-          if (update.length > 0 && update[1] != {} ) {
+          if (update.length > 0 && update[1] != {}) {
             let move = update[0];
             newState = update[1];
             move = new app.models.Move({
@@ -412,8 +289,7 @@ module.exports = (app) => {
               } else {
                 query = {
                   $inc: { moves: 1 },
-                  $set: { state: newState,
-                    score: game.score + score },
+                  $set: { state: newState, score: game.score + score },
                 };
               }
               // Save game to user's document too
@@ -440,14 +316,12 @@ module.exports = (app) => {
     }
   });
 
-  // Provide end-point to request shuffled deck of cards and initial state - for testing
-  app.get("/v1/cards/shuffle", (req, res) => {
-    res.send(shuffleCards(false));
-  });
-  app.get("/v1/cards/initial", (req, res) => {
-    res.send(initialState());
-  });
-
+  /**
+   * get move information
+   *
+   * @param (req.params.id} Id of move to get
+   * @return {200} move information
+   */
   app.get("/v1/moves/:id", (req, res) => {
     app.models.Move.findOne({ _id: req.params.id })
       .then((moves) => {
@@ -457,5 +331,13 @@ module.exports = (app) => {
         console.log(`Move.get failure: ${err}`);
         res.status(404).send({ error: `unknown move: ${req.params.id}` });
       });
-  })
+  });
+
+  // Provide end-point to request shuffled deck of cards and initial state - for testing
+  app.get("/v1/cards/shuffle", (req, res) => {
+    res.send(shuffleCards(false));
+  });
+  app.get("/v1/cards/initial", (req, res) => {
+    res.send(initialState());
+  });
 };

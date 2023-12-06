@@ -1,6 +1,8 @@
 /* Copyright G. Hemingway, @2023 - All rights reserved */
 "use strict";
 
+// borrowed from lecture code, modified to work with this app
+
 module.exports = (app, conf) => {
   // Make sure the user came to us first
   const checkState = async (goodState, state) => {
@@ -71,10 +73,10 @@ module.exports = (app, conf) => {
   });
 
   app.get("/auth/github", async (req, res) => {
-    // Must have a temp code from GH
+    // need a temp code from GH
     if (!req.query.code)
       return res.status(400).send({ error: "Code field required" });
-    // Must have state token too
+    // need state token 
     if (!req.query.state)
       return res.status(400).send({ error: "State field required" });
     // Validate state
@@ -98,7 +100,6 @@ module.exports = (app, conf) => {
               token: access_token,
             };
             console.log(`Session.login success: ${req.session.user.username}`);
-            // If a match, return 201:{ username, primary_email }
             res.redirect("/handle/" + user.login.toLowerCase());
           });
         } else {
@@ -121,7 +122,6 @@ module.exports = (app, conf) => {
         try {
           let user = new app.models.User(userState);
           await user.save();
-          // Send the happy response back
           res.redirect(
             `/handle/${userState.username}`
           );

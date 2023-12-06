@@ -5,8 +5,9 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Pile } from "./pile.js";
-import { checkSuit, precedes } from "../../shared/index.cjs";
 import { FormButton } from "./shared.js";
+import { checkPile2Stack, checkNoMoves } from "./check.js";
+import { set } from "mongoose";
 
 const CardRow = styled.div`
   position: relative;
@@ -30,143 +31,10 @@ const GameBase = styled.div`
   height: 100vh;
 `;
 
-const checkPile2Stack = (state) => {
-  for (let i = 1; i < 5; i++) {
-    const stack = state[`stack${i}`];
-    if (stack.length > 0) {
-      const card = stack[stack.length - 1];
-      for (let j = 1; j < 8; j++) {
-        const pile = state[`pile${j}`];
-        if (pile.length > 0) {
-          const pileCard = pile[pile.length - 1];
-          if (pileCard.suit === card.suit && precedes(card, pileCard)) {
-            return true;
-          }
-        }
-      }
-    } else {
-      for (let j = 1; j < 8; j++) {
-        const pile = state[`pile${j}`];
-        if (pile.length > 0 && pile[pile.length - 1].value === "ace") {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-};
-
-const checkPile2Pile = (state) => {
-  for (let i = 1; i < 8; i++) {
-    const pile = state[`pile${i}`];
-    if (pile.length > 0) {
-      const index = pile.findIndex((card) => card.up === true);
-      if (index !== 0) {
-        const card = pile[index];
-        for (let j = 1; j < 8; j++) {
-          if (i !== j) {
-            const otherPile = state[`pile${j}`];
-            if (otherPile.length > 0) {
-              const otherCard = otherPile[otherPile.length - 1];
-              if (
-                checkSuit(card, otherCard) &&
-                precedes(card, otherCard) &&
-                otherCard.up
-              ) {
-                return true;
-              }
-            }else{
-              if(card.value === "king"){
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return false;
-};
-const checkDiscard2Pile = (state) => {
-  const discard = [...state.discard, ...state.draw];
-  if (state.drawCount === 3) {
-    if (discard.length > 2) {
-      for (let i = 0; i < discard.length; ++i) {
-        if (i % 3 == 2 && i == discard.length - 1) {
-          const card = discard[i];
-          for (let j = 1; j < 8; j++) {
-            const pile = state[`pile${j}`];
-            if (pile.length > 0) {
-              const pileCard = pile[pile.length - 1];
-              if (checkSuit(pileCard, card) && precedes(card, pileCard)) {
-                return true;
-              }
-            } else {
-              if (card.value === "ace") {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    } else if (discard.length > 0) {
-      const card = discard[-1];
-      for (let j = 1; j < 8; j++) {
-        const pile = state[`pile${j}`];
-        if (pile.length > 0) {
-          const pileCard = pile[pile.length - 1];
-          if (checkSuit(pileCard, card) && precedes(card, pileCard)) {
-            return true;
-          }
-        } else {
-          if (card.value === "ace") {
-            return true;
-          }
-        }
-      }
-    }
-  } else {
-    if (discard.length > 0) {
-      for (let i = 0; i < discard.length; i++) {
-        const card = discard[i];
-        for (let j = 1; j < 8; j++) {
-          const pile = state[`pile${j}`];
-          if (pile.length > 0) {
-            const pileCard = pile[pile.length - 1];
-            if (checkSuit(pileCard, card) && precedes(card, pileCard)) {
-              return true;
-            }
-          } else {
-            if (card.value === "ace") {
-              return true;
-            }
-          }
-        }
-      }
-    }
-  }
-  return false;
-};
-
-const checkAllUp = (state) => {
-  for (let i = 1; i < 8; i++) {
-    const pile = state[`pile${i}`];
-    if (pile.length > 0) {
-      const index = pile.findIndex((card) => card.up === false);
-      if (index !== -1) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-const checkNoMoves = (state) => {
-  if (!checkAllUp(state) && !checkDiscard2Pile(state)&&!checkPile2Pile(state)) {
-    return true;
-  }
-  return false;
-};
+const FormButtonL = styled(FormButton)`
+  max-width: 300px;
+  margin-left: -10em;
+`;
 
 export const Game = () => {
   const { id } = useParams();
@@ -214,7 +82,7 @@ export const Game = () => {
         stack4: data.stack4,
         draw: data.draw,
         discard: data.discard,
-        active: data.active ? data.active : state.active,
+        active: data.active,
       });
       if (data.won) {
         console.log("Game Won!");
@@ -255,6 +123,19 @@ export const Game = () => {
     };
   }, [target]);
 
+  useEffect(() => {
+    if (checkPile2Stack(state)) {
+      setAuto(true);
+    } else {
+      setAuto(false);
+      if (checkNoMoves(state, drawcnt) && state.active) {
+        setEnd(true);
+      } else {
+        setEnd(false);
+      }
+    }
+  }, [state, target]);
+
   // update game state
   const updateView = (move) => {
     fetch(`/v1/game/${id}`, {
@@ -272,7 +153,7 @@ export const Game = () => {
         } else {
           if (response.status === 201) {
             setWon("Game Won!");
-          }else if(response.status === 202){
+          } else if (response.status === 202) {
             setWon("Game Ended!");
           }
           response.json().then((data) => {
@@ -340,7 +221,6 @@ export const Game = () => {
             src: target.pile,
             dest: pile,
           };
-          console.log(move);
           updateView(move);
         }
       }
@@ -371,7 +251,6 @@ export const Game = () => {
             src: target.pile,
             dest: pile,
           };
-          console.log(move);
           updateView(move);
         }
         deselect();
@@ -398,7 +277,6 @@ export const Game = () => {
         src: "draw",
         dest: "discard",
       };
-      console.log(`draw ${drawcnt}`, move);
       updateView(move);
       setTarget(undefined);
     } else {
@@ -422,7 +300,6 @@ export const Game = () => {
           src: target.pile,
           dest: pile,
         };
-        console.log(move);
         updateView(move);
         deselect();
       }
@@ -433,7 +310,6 @@ export const Game = () => {
         src: "draw",
         dest: "discard",
       };
-      console.log("reset draw");
       updateView(move);
     } else {
       deselect();
@@ -455,25 +331,11 @@ export const Game = () => {
           src: target.pile,
           dest: pile,
         };
-        console.log(move);
         updateView(move);
       }
     }
     deselect();
   };
-
-  useEffect(() => {
-    if (checkPile2Stack(state)) {
-      setAuto(true);
-    } else {
-      setAuto(false);
-      if (checkNoMoves(state) && state.active) {
-         setEnd(true);
-      } else {
-         setEnd(false);
-      }
-    }
-  }, [state]);
 
   // handle auto complete
   const tryAuto = () => {
@@ -489,7 +351,6 @@ export const Game = () => {
           setWon("Game Won!");
           console.log("Game Won!");
         }
-
         res.json().then((data) => {
           setState({
             ...state,
@@ -505,7 +366,7 @@ export const Game = () => {
             stack3: data.stack3,
             stack4: data.stack4,
           });
-          setAuto((prevAuto) => !prevAuto);
+          setAuto(false);
         });
       }
     });
@@ -515,6 +376,7 @@ export const Game = () => {
       if (res.ok) {
         setWon("Game Ended!");
         setEnd(false);
+        setState({ ...state, active: false });
       }
     });
   };
@@ -684,7 +546,9 @@ export const Game = () => {
             left: "50%",
           }}
         >
-          <FormButton onClick={endGame}>No Moves - End Game</FormButton>
+          <FormButtonL onClick={endGame}>
+            No Moves given Current Discard - End Game
+          </FormButtonL>
         </div>
       ) : null}
       {won ? (
@@ -700,5 +564,3 @@ export const Game = () => {
     </GameBase>
   );
 };
-
-Game.propTypes = {};

@@ -68,7 +68,11 @@ const HeaderRight = ({ user, avatar }) => {
         <Fragment>
           <Link to="/logout">Log Out</Link>
           <Link to={`/profile/${user}`}>
-            <img alt="go to profile" src={avatar} style={{width:"40px",height:"40px"}}/>
+            <img
+              alt="go to profile"
+              src={avatar}
+              style={{ width: "40px", height: "40px" }}
+            />
           </Link>
         </Fragment>
       ) : (

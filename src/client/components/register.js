@@ -75,6 +75,7 @@ export const Register = () => {
     navigate("/login");
   };
 
+  // also allowing Github Login
   return (
     <div style={{ gridArea: "main" }}>
       {notify !== "" ? (

@@ -28,9 +28,11 @@ let KlondykeGameState = new Schema(
 /* Schema for an individual move of Klondike */
 let Move = new Schema(
   {
+    // change to user name...
     user: { type: String, required: true},
     game: { type: Schema.ObjectId, ref: "Game", required: true, index: true },
     cards: { type: [CardState] },
+    // added to remember changed state
     state: { type: KlondykeGameState},
     src: { type: String },
     dest: { type: String },

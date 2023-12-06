@@ -102,6 +102,7 @@ const CardPlayRow = ({ cards }) => {
   );
 };
 
+// page for displaying each move, not clickable
 export const Move = () => {
   const { id } = useParams();
   const navigate = useNavigate();
