@@ -113,7 +113,6 @@ module.exports = (app) => {
               $set: {
                 active: false,
                 end: Date.now(),
-                score: game.score,
               },
             };
             // Save game to user's document too
@@ -254,6 +253,7 @@ module.exports = (app) => {
         let moreAuto = true;
         let newState = state;
         let won = false;
+        let initScore = game.score;
         while (moreAuto != false) {
           const update = checkAutoMove(drawCnt, newState);
           if (update.length > 0 && update[1] != {}) {
@@ -268,7 +268,7 @@ module.exports = (app) => {
             });
             try {
               let query = {};
-              const score = checkScore(move.src, move.dest);
+              initScore += checkScore(move.src, move.dest);
               if (
                 newState.stack1.length === 13 &&
                 newState.stack2.length === 13 &&
@@ -283,13 +283,13 @@ module.exports = (app) => {
                     won: true,
                     active: false,
                     end: Date.now(),
-                    score: game.score + score,
+                    score: initScore,
                   },
                 };
               } else {
                 query = {
                   $inc: { moves: 1 },
-                  $set: { state: newState, score: game.score + score },
+                  $set: { state: newState, score: initScore },
                 };
               }
               // Save game to user's document too

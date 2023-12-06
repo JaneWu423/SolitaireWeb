@@ -1,5 +1,7 @@
 const { checkSuit, precedes } = require("../../../shared/index.cjs");
 
+// helper for checks for game rules
+
 // check stack for legal move
 const checkStack = (stack, cards) => {
   if (cards.length === 1) {
