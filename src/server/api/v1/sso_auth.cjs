@@ -88,7 +88,7 @@ module.exports = (app, conf) => {
       // Get GH username
       const user = await checkGithubInfo(access_token);
       // Redirect to profile
-      const exist = await await app.models.User.findOne({
+      const exist = await app.models.User.findOne({
         username: user.login.toLowerCase(),
       });
       if (exist) {
@@ -96,7 +96,7 @@ module.exports = (app, conf) => {
           // Regenerate session when signing in to prevent fixation
           req.session.regenerate(() => {
             req.session.user = {
-              ...exist._doc,
+              ...exist,
               token: access_token,
             };
             console.log(`Session.login success: ${req.session.user.username}`);
