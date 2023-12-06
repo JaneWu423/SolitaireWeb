@@ -10,6 +10,7 @@ import {
   FormLabel,
   FormButton,
   ModalNotify,
+  GitHubButton,
 } from "./shared.js";
 import { validPassword, validUsername } from "../../shared/index.cjs";
 
@@ -143,6 +144,8 @@ export const Register = () => {
         <FormButton id="submitBtn" onClick={onSubmit}>
           Register
         </FormButton>
+        <div />
+          <GitHubButton id="submitGit" />
       </FormBase>
     </div>
   );

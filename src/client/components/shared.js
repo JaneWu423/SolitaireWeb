@@ -86,15 +86,15 @@ export const FormButton = styled.button`
   max-width: 150px;
   min-width: 50px;
   max-height: 2em;
-  background: #6495ed;
+  background: #002266;
+  color: #fff;
   border: none;
   border-radius: 5px;
   line-height: 2em;
   font-size: 0.8em;
-  color: lightblue;
   &:hover {
     background: lightblue;
-    color: #FFF;
+    color: #fff;
   }
 `;
 
@@ -134,3 +134,42 @@ export const ShortP = styled.p`
   white-space: nowrap;
   text-overflow: ellipsis;
 `;
+
+const FormButtonR = styled(FormButton)`
+  background-color: lightblue;
+  &:hover {
+    background-color: #00bfff;
+  }
+`;
+
+const ImageButton = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const GitHubButton = () => {
+  const onSubmitGH = async (ev) => {
+    ev.preventDefault();
+    let res = await fetch("/loginGH");
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = data.ghPath;
+    } else {
+      setError(`Error: ${data.error}`);
+    }
+  };
+  return (
+    <FormButtonR id="loginGithub" onClick={onSubmitGH}>
+      <ImageButton>
+        Login with Github
+        <img
+          src="/images/githubicon.png"
+          alt="GitHub Icon"
+          style={{ marginLeft: "1em", width: "10%", height: "80%" }}
+        />
+      </ImageButton>
+    </FormButtonR>
+  );
+};

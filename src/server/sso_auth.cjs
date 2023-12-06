@@ -1,6 +1,5 @@
 /* Copyright G. Hemingway, @2023 - All rights reserved */
 "use strict";
-// const { GravHash } = require("../shared/index.cjs");
 
 module.exports = (app, conf) => {
   // Make sure the user came to us first
@@ -38,7 +37,6 @@ module.exports = (app, conf) => {
     });
     if (res.ok) {
       const data = await res.json();
-      console.log(`Fetched Github UserId: ${data.login}`);
       const resInfo = await fetch(
         `https://api.github.com/users/${data.login}`,
         {
@@ -49,7 +47,6 @@ module.exports = (app, conf) => {
       );
       if (resInfo.ok) {
         const dataInfo = await resInfo.json();
-        console.log(dataInfo.login, dataInfo.email, dataInfo.avatar_url);
         return dataInfo;
       } else {
         throw "checkGithubUserInfo error";
@@ -70,7 +67,6 @@ module.exports = (app, conf) => {
       `scope=${conf.github.scope}&` +
       `client_id=${conf.github.client_id}&` +
       `state=${req.session.state}`;
-    console.log(`Sending users to: ${ghPath}`);
     res.send({ ghPath: ghPath });
   });
 
@@ -89,16 +85,6 @@ module.exports = (app, conf) => {
       const { access_token } = await checkCode(req.query.code, req.query.state);
       // Get GH username
       const user = await checkGithubInfo(access_token);
-      console.log(
-        `Fetched Github UserId: ${user.login} and id is ${user.node_id}`
-      );
-      // Save the login and token to the session for future use
-      // req.session.user = {
-      //   username: user.login,
-      //   email: user.email,
-      //   avatar: user.avatar_url,
-      //   token: access_token,
-      // };
       // Redirect to profile
       const exist = await await app.models.User.findOne({
         username: user.login.toLowerCase(),
@@ -134,7 +120,6 @@ module.exports = (app, conf) => {
         };
         try {
           let user = new app.models.User(userState);
-          console.log(user);
           await user.save();
           // Send the happy response back
           res.redirect(
