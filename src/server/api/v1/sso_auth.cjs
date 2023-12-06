@@ -99,8 +99,8 @@ module.exports = (app, conf) => {
               ...exist,
               token: access_token,
             };
-            console.log(`Session.login success: ${req.session.user.username}`);
-            res.redirect("/handle/" + req.session.user.username);
+            console.log(`Session.login success: ${exist.username}`);
+            res.redirect("/handle/" + exist.username);
           });
         } else {
           // If not a match, return 401:unauthorized
@@ -129,7 +129,7 @@ module.exports = (app, conf) => {
               token: access_token,
             };
             console.log(`Session.login success: ${loginUser.username}`);
-            res.redirect("/handle/" + req.session.user.username);
+            res.redirect("/handle/" + loginUser.username);
           });
         } catch (err) {
           console.log(err);
