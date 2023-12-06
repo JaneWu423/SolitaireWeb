@@ -122,9 +122,14 @@ module.exports = (app, conf) => {
         try {
           let user = new app.models.User(userState);
           await user.save();
-          res.redirect(
-            `/handle/${userState.username}`
-          );
+          req.session.regenerate(() => {
+            req.session.user = {
+              ...user,
+              token: access_token,
+            };
+            console.log(`Session.login success: ${req.session.user.username}`);
+            res.redirect("/handle/" + user.login.toLowerCase());
+          });
         } catch (err) {
           console.log(err);
           // Error if username is already in use
