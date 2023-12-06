@@ -100,7 +100,7 @@ module.exports = (app, conf) => {
               token: access_token,
             };
             console.log(`Session.login success: ${req.session.user.username}`);
-            res.redirect("/handle/" + req.session.user.username.toLowerCase());
+            res.redirect("/handle/" + req.session.user.username);
           });
         } else {
           // If not a match, return 401:unauthorized
