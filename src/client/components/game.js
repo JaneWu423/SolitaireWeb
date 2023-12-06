@@ -162,7 +162,7 @@ const checkAllUp = (state) => {
 }
 
 const checkNoMoves = (state) => {
-  if (!checkAllUp(state)&&!checkPile2Stack(state) && !checkDiscard2Pile(state)&&!checkPile2Pile(state)) {
+  if (!checkAllUp(state) && !checkDiscard2Pile(state)&&!checkPile2Pile(state)) {
     return true;
   }
   return false;
@@ -184,6 +184,7 @@ export const Game = () => {
     stack4: [],
     draw: [],
     discard: [],
+    active: true,
   });
   // record what cards are selected
   let [target, setTarget] = useState(undefined);
@@ -213,7 +214,7 @@ export const Game = () => {
         stack4: data.stack4,
         draw: data.draw,
         discard: data.discard,
-        active: data.active
+        active: data.active ? data.active : state.active,
       });
       if (data.won) {
         console.log("Game Won!");
@@ -289,7 +290,7 @@ export const Game = () => {
               stack4: data.stack4,
               draw: data.draw,
               discard: data.discard,
-              active: data.active
+              active: data.active ? data.active : state.active,
             });
           });
         }
@@ -466,14 +467,11 @@ export const Game = () => {
       setAuto(true);
     } else {
       setAuto(false);
-    }
-  }, [state]);
-
-  useEffect(() => {
-    if (checkNoMoves(state) && state.active) {
-      setEnd(true);
-    } else {
-      setEnd(false);
+      if (checkNoMoves(state) && state.active) {
+         setEnd(true);
+      } else {
+         setEnd(false);
+      }
     }
   }, [state]);
 

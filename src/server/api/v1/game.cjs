@@ -254,6 +254,7 @@ module.exports = (app) => {
         if (newState) {
           move = new app.models.Move({
             ...move,
+            state: newState,
             game: req.params.id,
             date: Date.now(),
             user: req.session.user.username,
@@ -384,6 +385,7 @@ module.exports = (app) => {
             move = new app.models.Move({
               ...move,
               game: req.params.id,
+              state: newState,
               date: Date.now(),
               user: req.session.user.username,
             });
@@ -445,4 +447,15 @@ module.exports = (app) => {
   app.get("/v1/cards/initial", (req, res) => {
     res.send(initialState());
   });
+
+  app.get("/v1/moves/:id", (req, res) => {
+    app.models.Move.findOne({ _id: req.params.id })
+      .then((moves) => {
+        res.status(200).send({ state: moves.state });
+      })
+      .catch((err) => {
+        console.log(`Move.get failure: ${err}`);
+        res.status(404).send({ error: `unknown move: ${req.params.id}` });
+      });
+  })
 };

@@ -8,6 +8,7 @@ import PropTypes from "prop-types";
 import { ErrorMessage, InfoBlock, InfoData, InfoLabels } from "./shared.js";
 
 
+
 const formatDate = (date) => {
   if (!date) {
     return "--";
@@ -36,7 +37,7 @@ const Move = ({ move, index }) => {
       <th>
         <Link to={`/profile/${move.user}`}>{move.user}</Link>
       </th>
-      <th>{`${cardsStr} from ${move.src} to ${move.dest}`}</th>
+      <th><Link to={`/move/${move._id}`}>{`${cardsStr} from ${move.src} to ${move.dest}`}</Link></th>
     </tr>
   );
 };
@@ -101,7 +102,7 @@ const GameDetail = ({ start, moves, score, cards_remaining,won, active }) => {
         <p>{moves.length}</p>
         <p>{score}</p>
         <p>{cards_remaining}</p>
-        <p>{active ? "Active" : won? "Won" : "No Move Moves"}</p>
+        <p>{active ? "Active" : won? "Won" : "No Possible Moves"}</p>
       </InfoData>
     </InfoBlock>
   );

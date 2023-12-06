@@ -16,6 +16,7 @@ import { Start } from "./components/start.js";
 import { Results } from "./components/results.js";
 import { Game } from "./components/game.js";
 import { Handle } from "./components/handle.js";
+import { Move } from "./components/move.js";
 
 const defaultUser = {
   username: "",
@@ -135,6 +136,7 @@ const MyApp = () => {
           />
           <Route path="/game/:id" element={<Game user={state} />} />
           <Route path="/results/:id" element={<Results user={state} />} />
+          <Route path="/move/:id" element={<Move user={state} />} />
         </Routes>
       </GridBase>
     </BrowserRouter>
