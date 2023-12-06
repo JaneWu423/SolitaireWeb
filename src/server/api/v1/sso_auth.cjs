@@ -122,11 +122,10 @@ module.exports = (app, conf) => {
         try {
           let loginUser = new app.models.User(userState);
           await loginUser.save();
-
           req.session.user = {
-            ...loginUser,
+            ...loginUser._doc,
             token: access_token,
-          };
+          }
           console.log(`Session.login success: ${userState.username}`);
           res.redirect("/handle/" + userState.username);
   
