@@ -124,11 +124,11 @@ module.exports = (app, conf) => {
           await loginUser.save();
           await req.session.regenerate(() => {
             req.session.user = {
-              ...loginUser,
+              ...userState,
               token: access_token,
             };
-            console.log(`Session.login success: ${loginUser.username}`);
-            res.redirect("/handle/" + loginUser.username);
+            console.log(`Session.login success: ${userState.username}`);
+            res.redirect("/handle/" + userState.username);
           });
         } catch (err) {
           console.log(err);
