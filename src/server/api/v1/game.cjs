@@ -21,7 +21,6 @@ module.exports = (app) => {
    * @return {201 with { id: ID of new game }}
    */
   app.post("/v1/game", async (req, res) => {
-    console.log("Game.create for: ",req.session.user);
     if (!req.session.user)
       return res.status(401).send({ error: "unauthorized" });
 
