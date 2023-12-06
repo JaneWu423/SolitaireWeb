@@ -124,7 +124,7 @@ module.exports = (app, conf) => {
           await loginUser.save();
           await req.session.regenerate(() => {
             req.session.user = {
-              ...userState,
+              ...loginUser,
               token: access_token,
             };
             console.log(`Session.login success: ${userState.username}`);
