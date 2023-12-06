@@ -122,6 +122,7 @@ module.exports = (app, conf) => {
         try {
           let loginUser = new app.models.User(userState);
           await loginUser.save();
+          console.log(loginUser);
           req.session.regenerate(() => {
             req.session.user = {
               ...loginUser,
@@ -135,12 +136,12 @@ module.exports = (app, conf) => {
           // Error if username is already in use
           if (err.code === 11000) {
             if (err.message.indexOf("username_1") !== -1)
-              res.status(400).send({ error: "username already in use" });
+              return res.status(400).send({ error: "username already in use" });
             if (err.message.indexOf("primary_email_1") !== -1)
-              res.status(400).send({ error: "email address already in use" });
+              return res.status(400).send({ error: "email address already in use" });
           }
           // Something else in the username failed
-          else res.status(400).send({ error: err });
+          else return res.status(400).send({ error: err });
         }
       }
     } catch (err) {
