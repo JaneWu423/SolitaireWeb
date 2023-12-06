@@ -94,7 +94,7 @@ module.exports = (app, conf) => {
       if (exist) {
         if (await exist.authenticate(user.node_id)) {
           // Regenerate session when signing in to prevent fixation
-          await req.session.regenerate(() => {
+          req.session.regenerate(() => {
             req.session.user = {
               ...exist._doc,
               token: access_token,
@@ -114,8 +114,10 @@ module.exports = (app, conf) => {
           username: user.login.toLowerCase(),
           first_name: first_name,
           last_name: last_name,
+          // placeholder email
           primary_email: user.email ? user.email : "no@email.com",
           city: user.location ? user.location : "",
+          // placeholder avatar
           avatar: user.avatar_url? user.avatar_url : "/images/githubicon.png",
           password: user.node_id,
         };
