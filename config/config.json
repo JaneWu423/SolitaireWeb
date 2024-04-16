@@ -13,8 +13,8 @@
     }
   },
   "github": {
-    "client_id": "52b7d21e5fa4a7f241c1",
-    "client_secret": "6799c185bbfdd934e3942e69f94a513e575c4d2b",
+    "client_id": "client_id",
+    "client_secret": "client_secret",
     "scope": "read:repo",
     "url": "http://localhost:8080/auth/github"
   }
